@@ -13,7 +13,9 @@ def run():
     """
     Run the crew.
     """
-    inputs = {"query": "Get names of employees from Engineering department."}
+    inputs = {
+        "query": "Gather first and last names of customers whose first name starts with `M`"
+    }
 
     try:
         SqlAgent().crew().kickoff(inputs=inputs)

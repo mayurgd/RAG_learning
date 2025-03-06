@@ -1,46 +1,30 @@
-from crewai.tools import BaseTool
-from typing import Type
-from pydantic import BaseModel, Field
-
-
-class MyCustomToolInput(BaseModel):
-    """Input schema for MyCustomTool."""
-
-    argument: str = Field(..., description="Description of the argument.")
-
-
-class MyCustomTool(BaseTool):
-    name: str = "Name of my tool"
-    description: str = (
-        "Clear description for what this tool is useful for, your agent will need this information to use it."
-    )
-    args_schema: Type[BaseModel] = MyCustomToolInput
-
-    def _run(self, argument: str) -> str:
-        # Implementation goes here
-        return "this is an example of a tool output, ignore it and move along."
-
-
+from langchain_community.tools.sql_database.tool import (
+    ListSQLDatabaseTool,
+    InfoSQLDatabaseTool,
+    QuerySQLDatabaseTool,
+)
+from crewai.tools import tool
 from langchain_community.utilities.sql_database import SQLDatabase
-from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
-from langchain.tools import BaseTool
-from pydantic import Field
-from sqlalchemy import create_engine
+
+db = SQLDatabase.from_uri("postgresql://postgres:Mayur%40356@localhost:5432/DVDRentals")
 
 
-class QueryTool(BaseTool):
-    name: str = "query_tool"
-    description: str = "Execute a SQL query against the database. Returns the result"
-    db: str
+@tool("list_tables")
+def list_tables() -> str:
+    """List the available tables in the database."""
+    return {"tables": ListSQLDatabaseTool(db=db).invoke("")}
 
-    def __init__(self):  # Constructor to initialize the database
-        super().__init__()
-        self.db = create_engine("sqlite:///company.db")
-        self.query_tool = QuerySQLDataBaseTool(db=self.db)
 
-    def _run(self, query: str) -> str:
-        """Execute the search query and return results"""
-        try:
-            return self.query_tool.invoke(query)
-        except Exception as e:
-            return f"Error performing search: {str(e)}"
+@tool("tables_schema")
+def tables_schema(tables: str) -> str:
+    """
+    Input: a comma-separated list of tables.
+    Output: the schema and sample rows for those tables.
+    """
+    return InfoSQLDatabaseTool(db=db).invoke(tables)
+
+
+@tool("execute_sql")
+def execute_sql(sql_query: str) -> str:
+    """Execute a SQL query against the database and return the result."""
+    return QuerySQLDatabaseTool(db=db).invoke(sql_query)
