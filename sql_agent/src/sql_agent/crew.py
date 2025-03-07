@@ -3,12 +3,9 @@ from crewai.project import CrewBase, agent, crew, task
 from dotenv import load_dotenv
 
 load_dotenv()
-from tools.custom_tool import *
-from crewai_tools import NL2SQLTool
+from tools.nl2sql_tool import NL2SQLTool
 
-nl2sql = NL2SQLTool(
-    db_uri="postgresql://postgres:Mayur%40356@localhost:5432/DVDRentals"
-)
+nl2sql = NL2SQLTool(db_uri="sqlite:///sql_agent/src/sql_agent/company.db")
 
 
 @CrewBase
@@ -23,7 +20,7 @@ class SqlAgent:
         return Agent(
             config=self.agents_config["database_developer"],
             verbose=True,
-            tools=[list_tables, tables_schema, nl2sql, execute_sql],
+            tools=[nl2sql],
         )
 
     @agent
