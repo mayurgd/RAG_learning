@@ -20,18 +20,17 @@ def create_chat_prompt() -> ChatPromptTemplate:
         ChatPromptTemplate: A structured chat prompt template.
     """
     template = """
-    "You are an assistant for question-answering tasks. "
-    "Use the following pieces of retrieved context to answer "
-    "the question. If you don't know the answer, say that you "
-    "don't know. Keep the answers concise."
+    "You are an assistant for answering questions about Python libraries."
+    "Use the following pieces of retrieved context to answer the question."
+    "If you don't know the answer, say that you don't know."
+    "Keep the answers concise."
     "\n\n"
-    Question: {question}
-    You assist user queries based on: {context}
+    Conext: {context}
     """
 
     system_message_prompt = SystemMessagePromptTemplate.from_template(template)
     human_message_prompt = HumanMessagePromptTemplate.from_template(
-        input_variables=["question", "context"], template="{question}"
+        input_variables=["question"], template="{question}"
     )
 
     chat_prompt_template = ChatPromptTemplate.from_messages(

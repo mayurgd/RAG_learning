@@ -20,9 +20,7 @@ def get_chat_model() -> ChatGoogleGenerativeAI:
     """
     Initializes and returns a ChatGoogleGenerativeAI model instance.
 
-    The model used is 'gemini-2.0-flash' with a temperature of 0 for deterministic responses.
-    It allows an unlimited number of tokens per response (`max_tokens=None`),
-    has no request timeout (`timeout=None`), and retries twice in case of failure.
+    The model used is 'gemini-2.0-flash'
 
     Returns:
         ChatGoogleGenerativeAI: An instance of the Gemini 2.0 Flash chat model.
@@ -39,7 +37,7 @@ def get_chat_model() -> ChatGoogleGenerativeAI:
 
 def process_vector_store(
     chunk_size: int = 500,
-    chunk_overlap: int = 200,
+    chunk_overlap: int = 100,
     embedding: GoogleGenerativeAIEmbeddings = GoogleGenerativeAIEmbeddings(
         model="models/embedding-001"
     ),
@@ -49,7 +47,7 @@ def process_vector_store(
 
     Args:
         chunk_size (int, optional): The size of each text chunk. Defaults to 500.
-        chunk_overlap (int, optional): The overlap between consecutive chunks. Defaults to 200.
+        chunk_overlap (int, optional): The overlap between consecutive chunks. Defaults to 100.
         embedding (GoogleGenerativeAIEmbeddings, optional): The embedding model used for vectorization.
             Defaults to GoogleGenerativeAIEmbeddings(model="models/embedding-001").
 
@@ -72,7 +70,7 @@ def process_vector_store(
     )
 
     # Convert the vector store into a retriever
-    retriever = vectorstore.as_retriever()
+    retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 3})
 
     return retriever
 
@@ -82,20 +80,12 @@ retriever = process_vector_store()
 chat_prompt_template = create_chat_prompt()
 
 
-def generate_response(
-    query: str,
-    retriever: BaseRetriever,
-    llm: ChatGoogleGenerativeAI,
-    chat_prompt_template: ChatPromptTemplate,
-) -> str:
+def generate_response(query: str) -> str:
     """
     Generates a response to a given query using a retrieval-augmented chain.
 
     Args:
         query (str): The user's input query.
-        retriever (BaseRetriever): A retriever instance for fetching relevant context.
-        llm (ChatGoogleGenerativeAI): The language model for generating responses.
-        chat_prompt_template (ChatPromptTemplate): A prompt template to structure input for the model.
 
     Returns:
         str: The generated response as a string.
