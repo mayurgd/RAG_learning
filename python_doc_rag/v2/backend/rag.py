@@ -9,9 +9,8 @@ from langchain_community.document_loaders import WebBaseLoader
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-
-import constants as const
-from prompt import create_chat_prompt
+import v2.constants as const
+from v2.backend.prompt import create_chat_prompt
 
 load_dotenv()
 

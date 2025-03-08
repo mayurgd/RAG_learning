@@ -1,11 +1,8 @@
 import time
 import requests
 import streamlit as st
+import v2.constants as const
 
-# --------------------------------------------------------------------------------------------#
-# FastAPI server URLs
-FASTAPI_URL_QUERY = "http://127.0.0.1:8000/generate-response/"
-# --------------------------------------------------------------------------------------------#
 # Set page configuration
 st.set_page_config(page_title="Python Documentation Chatbot", layout="wide")
 # Add header
@@ -50,9 +47,7 @@ if prompt := st.chat_input("Ask about Python documentation..."):
     with st.spinner("Thinking..."):
         payload = {"query": prompt}
         # Get response from retrieval chain
-        response = requests.post(
-            "http://127.0.0.1:8000/generate-response/", json=payload
-        )
+        response = requests.post(const.FASTAPI_URL_QUERY, json=payload)
         response_data = response.json()
         response_answer = response_data["response"]
 
