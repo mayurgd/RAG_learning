@@ -1,6 +1,6 @@
-from v3.backend.retrieval_chains import retrieval_chain_with_memory
+from v3.backend.retrieval_chains import retrieval_chain_with_memory_and_rewriting
 
-chain = retrieval_chain_with_memory()
+retriever = retrieval_chain_with_memory_and_rewriting()
 
 
 def generate_response(query: str, chat_history=[]) -> str:
@@ -13,4 +13,4 @@ def generate_response(query: str, chat_history=[]) -> str:
     Returns:
         str: The generated response as a string.
     """
-    return chain.invoke({"input": query, "chat_history": chat_history})
+    return retriever(query, chat_history)

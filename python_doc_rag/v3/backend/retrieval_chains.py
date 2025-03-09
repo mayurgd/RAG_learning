@@ -238,3 +238,86 @@ def get_source_info(docs_to_use, question, answer):
     ):
         result.append({"id": id, "title": title, "source": source, "segment": segment})
     return result
+
+
+def retrieval_chain_with_memory_and_rewriting():
+    llm = get_chat_model()
+    retriever = process_vector_store()
+
+    # Contextualize question based on chat history
+    contextualize_q_system_prompt = (
+        "Given a chat history and the latest user question, "
+        "which might reference context in the chat history, "
+        "formulate a standalone question that can be understood "
+        "without the chat history. If the question is already self-contained, return it as is."
+    )
+
+    contextualize_q_prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", contextualize_q_system_prompt),
+            MessagesPlaceholder("chat_history"),
+            ("human", "{input}"),
+        ]
+    )
+
+    history_aware_retriever = create_history_aware_retriever(
+        llm, retriever, contextualize_q_prompt
+    )
+
+    # Query rewriting system prompt
+    query_rewrite_template = """You are an AI assistant designed to enhance user queries for better retrieval accuracy.
+    Your task is to rewrite the query while maintaining its original intent.
+
+    Rules:
+    1. If the query references previous chat history (e.g., uses pronouns like "it," "that," "they," or assumes prior context), rewrite it into a fully self-contained question.
+    2. If the query is already clear and specific, rephrase it naturally while keeping its meaning intact.
+    3. If the query is too vague to improve, return it unchanged.
+
+    Chat History:
+    {chat_history}
+
+    Original Query: {original_query}
+
+    Rewritten Query:"""
+
+    query_rewrite_prompt = ChatPromptTemplate.from_template(query_rewrite_template)
+
+    # Create query rewriting chain
+    query_rewriter = query_rewrite_prompt | llm | StrOutputParser()
+
+    # Answer question using retrieved context
+    qa_system_prompt = (
+        "You are an assistant for answering questions about Python libraries. "
+        "Use the following pieces of retrieved context to answer the question. "
+        "If you don't know the answer, say that you don't know. "
+        "Keep the answers concise."
+        "\n\n"
+        "Context: {context}"
+    )
+
+    qa_prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", qa_system_prompt),
+            MessagesPlaceholder("chat_history"),
+            ("human", "{input}"),
+        ]
+    )
+
+    # Chain to generate final response
+    question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
+
+    # Create final retrieval chain
+    rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
+
+    def retrieve_with_rewritten_query(original_query, chat_history):
+        rewritten_query = query_rewriter.invoke(
+            {"chat_history": chat_history, "original_query": original_query}
+        )
+        print(rewritten_query)
+        response = rag_chain.invoke(
+            {"chat_history": chat_history, "input": rewritten_query}
+        )
+        response["rewritten_input"] = rewritten_query
+        return response
+
+    return retrieve_with_rewritten_query

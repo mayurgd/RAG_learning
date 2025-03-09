@@ -61,7 +61,7 @@ if prompt := st.chat_input("Ask about Python documentation..."):
         # Store sources in session state
         st.session_state.sources = get_source_info(
             response_data["response"]["context"],
-            response_data["response"].get("input", ""),
+            response_data["response"].get("rewritten_input", ""),
             response_data["response"].get("answer", ""),
         )
 

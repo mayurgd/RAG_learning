@@ -42,6 +42,6 @@ def process_vector_store(
     )
 
     # Convert the vector store into a retriever
-    retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 3})
+    retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 5})
 
     return retriever
