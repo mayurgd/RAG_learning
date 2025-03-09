@@ -27,7 +27,7 @@ async def query_docs(request: Query):
 
         return {
             "query": request.query,
-            "response": response["answer"],
+            "response": response,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error during query: {e}")
