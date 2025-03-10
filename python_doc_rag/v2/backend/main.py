@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from rag import generate_response
+from v2.backend.rag import generate_response
 
 app = FastAPI()
 

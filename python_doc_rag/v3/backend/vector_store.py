@@ -1,37 +1,10 @@
-from dotenv import load_dotenv
 from langchain_chroma import Chroma
 from langchain.schema import BaseRetriever
-from langchain.schema import StrOutputParser
-from langchain.prompts import ChatPromptTemplate
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.schema.runnable import RunnablePassthrough
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-import v2.constants as const
-from v2.backend.prompt import create_chat_prompt
-
-load_dotenv()
-
-
-def get_chat_model() -> ChatGoogleGenerativeAI:
-    """
-    Initializes and returns a ChatGoogleGenerativeAI model instance.
-
-    The model used is 'gemini-2.0-flash'
-
-    Returns:
-        ChatGoogleGenerativeAI: An instance of the Gemini 2.0 Flash chat model.
-    """
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash",
-        temperature=0,
-        max_tokens=None,
-        timeout=None,
-        max_retries=2,
-    )
-    return llm
+import v3.constants as const
 
 
 def process_vector_store(
@@ -69,30 +42,6 @@ def process_vector_store(
     )
 
     # Convert the vector store into a retriever
-    retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 3})
+    retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 5})
 
     return retriever
-
-
-llm = get_chat_model()
-retriever = process_vector_store()
-chat_prompt_template = create_chat_prompt()
-
-
-def generate_response(query: str) -> str:
-    """
-    Generates a response to a given query using a retrieval-augmented chain.
-
-    Args:
-        query (str): The user's input query.
-
-    Returns:
-        str: The generated response as a string.
-    """
-    chain = (
-        {"context": retriever, "question": RunnablePassthrough()}
-        | chat_prompt_template
-        | llm
-        | StrOutputParser()
-    )
-    return chain.invoke(query)

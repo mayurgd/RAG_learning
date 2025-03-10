@@ -6,6 +6,6 @@
 
 
 ```python
->> uvicorn v2.backend.main:app --reload
->> python -m streamlit run v2/frontend/main.py
+>> uvicorn v3.backend.main:app --reload
+>> python -m streamlit run v3/frontend/main.py
 ```
