@@ -1,39 +1,24 @@
+import os
+from typing import List
+import v5.constants as const
+from v5.logger import loggers_utils
+from pydantic import BaseModel, Field
+from v5.backend.llm import get_chat_model
+from langchain_core.prompts import PromptTemplate
+from v5.backend.vector_store import process_vector_store
+from langchain.output_parsers import PydanticOutputParser
+from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain_community.chat_message_histories import SQLChatMessageHistory
 from langchain.chains import (
     create_history_aware_retriever,
     create_retrieval_chain,
 )
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-
-from v5.backend.llm import get_chat_model
-from v5.backend.vector_store import process_vector_store
-
-from langchain_community.chat_message_histories import ChatMessageHistory
-from langchain_core.chat_history import BaseChatMessageHistory
-from langchain_core.runnables.history import RunnableWithMessageHistory
-from langchain.output_parsers import PydanticOutputParser
-from langchain_core.prompts import PromptTemplate
-from pydantic import BaseModel, Field
-from typing import List
-
-store = {}
-from v5.logger import loggers_utils
 
 logger = loggers_utils(__name__)
 
-store = {}
-
-
-def get_session_history(session_id: str) -> BaseChatMessageHistory:
-    """Retrieve or create a chat session history."""
-    if session_id not in store:
-        logger.info(f"Creating new chat session history for session_id: {session_id}")
-        store[session_id] = ChatMessageHistory()
-    else:
-        logger.info(
-            f"Retrieving existing chat session history for session_id: {session_id}"
-        )
-    return store[session_id]
+os.makedirs(const.CHAT_DB_LOC.split("/")[0], exist_ok=True)
 
 
 def retrieval_chain_with_session_memory():
@@ -73,6 +58,7 @@ def retrieval_chain_with_session_memory():
         "You are an assistant for answering questions about Python libraries. "
         "Use the following pieces of retrieved context to answer the question. "
         "If you don't know the answer, say that you don't know. "
+        "If you don't have enough context, say that you don't know. "
         "Keep the answers concise."
         "\n\n"
         "Context: {context}"
@@ -95,7 +81,11 @@ def retrieval_chain_with_session_memory():
 
     conversational_rag_chain = RunnableWithMessageHistory(
         rag_chain,
-        get_session_history,
+        lambda session_id: SQLChatMessageHistory(
+            session_id=session_id,
+            connection_string=f"sqlite:///{const.CHAT_DB_LOC}",
+            table_name="message_store",
+        ),
         input_messages_key="input",
         history_messages_key="chat_history",
         output_messages_key="answer",

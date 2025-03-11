@@ -1,15 +1,14 @@
 import os
 import faiss
 import numpy as np
+import v5.constants as const
+from v5.logger import loggers_utils
 from langchain.schema import BaseRetriever
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.docstore.in_memory import InMemoryDocstore
-
-import v5.constants as const
-from v5.logger import loggers_utils
 
 logger = loggers_utils(__name__)
 

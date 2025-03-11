@@ -1,5 +1,5 @@
-from v5.backend.retrieval_chains import retrieval_chain_with_session_memory
 from v5.logger import loggers_utils
+from v5.backend.retrieval_chains import retrieval_chain_with_session_memory
 
 logger = loggers_utils(__name__)
 retriever = retrieval_chain_with_session_memory()

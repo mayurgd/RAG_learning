@@ -1,9 +1,12 @@
 import time
+import uuid
+import json
+import sqlite3
 import requests
 import streamlit as st
 import v5.constants as const
-import uuid
 from v5.backend.retrieval_chains import get_source_info
+from langchain_community.chat_message_histories import SQLChatMessageHistory
 
 # Set page configuration
 st.set_page_config(page_title="Python Documentation Chatbot", layout="wide")
@@ -20,50 +23,87 @@ if "sessions" not in st.session_state:
     st.session_state.active_session = None
 
 
+# Connect to SQLite database and fetch existing sessions
+def load_sessions():
+    try:
+        conn = sqlite3.connect(const.CHAT_DB_LOC)
+        cursor = conn.cursor()
+        cursor.execute("SELECT DISTINCT session_id FROM message_store")
+        session_ids = [row[0] for row in cursor.fetchall()]
+    except:
+        return
+    for session_id in session_ids:
+        cursor.execute(
+            f"SELECT message FROM message_store WHERE session_id = '{session_id}'"
+        )
+        messages = [json.loads(row[0]) for row in cursor.fetchall()]
+        formatted_messages = [
+            {
+                "role": "user" if msg["type"] == "human" else "assistant",
+                "content": msg["data"]["content"],
+            }
+            for msg in messages
+        ]
+        st.session_state.sessions[session_id] = {
+            "messages": formatted_messages,
+            "sources": [],
+            "show_sources": False,
+        }
+
+    if session_ids:
+        st.session_state.active_session = session_ids[0]
+
+    conn.close()
+
+
+# Load sessions from DB
+if not st.session_state.sessions:
+    load_sessions()
+
+
 # Function to create a new chat session
 def create_new_session():
-    session_id = str(uuid.uuid4())[:8]  # Generate a short unique session ID
+    session_id = str(uuid.uuid4())[:8]
     st.session_state.sessions[session_id] = {
         "messages": [],
         "sources": [],
         "show_sources": False,
     }
-    st.session_state.active_session = session_id  # Set new session as active
+    st.session_state.active_session = session_id
 
 
 # Function to delete a chat session
 def delete_session(session_id):
     if session_id in st.session_state.sessions:
         del st.session_state.sessions[session_id]
-        # If the deleted session was active, set another session as active
         if st.session_state.active_session == session_id:
-            if st.session_state.sessions:  # If there are remaining sessions
-                st.session_state.active_session = next(iter(st.session_state.sessions))
-            else:
-                create_new_session()  # Ensure at least one session exists
-        st.rerun()  # Force immediate UI update in latest Streamlit
+            st.session_state.active_session = next(
+                iter(st.session_state.sessions), None
+            )
+            if not st.session_state.active_session:
+                create_new_session()
+        # create sync sql message history by connection_string
+        message_history = SQLChatMessageHistory(
+            session_id=session_id,
+            connection_string="sqlite:///v5/backend/chat_history/chats.db",
+        )
+        message_history.clear()
 
+        st.rerun()
 
-# Ensure there is at least one session
-if not st.session_state.sessions:
-    create_new_session()
 
 # Sidebar with session controls
 with st.sidebar:
     st.markdown("### About")
     st.markdown(
-        """
-        This chatbot uses Retrieval-Augmented Generation (RAG) to answer questions about important Python libraries!
-        """
+        "This chatbot uses Retrieval-Augmented Generation (RAG) to answer questions about important Python libraries!"
     )
 
-    # Button to create a new session
     if st.button("New Chat Session"):
         create_new_session()
 
-    # Display all sessions with delete option
     st.markdown("### Active Sessions")
-    to_delete = None  # Track which session to delete
+    to_delete = None
     for session_id in list(st.session_state.sessions.keys()):
         col1, col2 = st.columns([0.8, 0.2])
         with col1:
@@ -73,26 +113,18 @@ with st.sidebar:
             if st.button("❌", key=f"delete_{session_id}"):
                 to_delete = session_id
 
-    # Perform deletion after iteration to avoid modifying dict size during loop
     if to_delete:
         delete_session(to_delete)
 
-    # Display the active session ID
     st.markdown(f"**Active Session ID:** `{st.session_state.active_session}`")
-
-    # Button to clear conversation for the active session
-    if st.button("Clear Conversation"):
-        st.session_state.sessions[st.session_state.active_session] = {
-            "messages": [],
-            "sources": [],
-            "show_sources": False,
-        }
 
 # Retrieve the active session
 active_session = st.session_state.active_session
-session_data = st.session_state.sessions[active_session]
+session_data = st.session_state.sessions.get(
+    active_session, {"messages": [], "sources": [], "show_sources": False}
+)
 
-# Display chat messages from history
+# Display chat messages
 for message in session_data["messages"]:
     with st.chat_message(message["role"]):
         st.write(message["content"])
@@ -100,13 +132,10 @@ for message in session_data["messages"]:
 # Handle user input
 if prompt := st.chat_input("Ask about Python documentation..."):
     session_data["messages"].append({"role": "user", "content": prompt})
-
     with st.chat_message("user"):
         st.write(prompt)
-
     with st.spinner("Thinking..."):
-        payload = {"query": prompt, "session_id": str(st.session_state.active_session)}
-        print(payload)
+        payload = {"query": prompt, "session_id": active_session}
         response = requests.post(const.FASTAPI_URL_QUERY, json=payload)
         response_data = response.json()
         response_answer = response_data["response"]["answer"]
@@ -127,7 +156,6 @@ if prompt := st.chat_input("Ask about Python documentation..."):
                 full_response += chunk + " "
                 time.sleep(0.05)
                 message_placeholder.markdown(full_response + "▌")
-
             message_placeholder.empty()
             message_placeholder.write(response_answer)
             session_data["messages"].append(
@@ -146,14 +174,10 @@ if prompt := st.chat_input("Ask about Python documentation..."):
 if session_data["sources"]:
     if st.button("Show Sources"):
         session_data["show_sources"] = not session_data["show_sources"]
-
     if session_data["show_sources"]:
         st.markdown("### Sources")
         for source in session_data["sources"]:
             st.markdown(
-                f"**ID:** {source['id']}  \n"
-                f"**Title:** {source['title']}  \n"
-                f"**Source:** {source['source']}  \n"
-                f"**Text Segment:** {source['segment']}  \n",
+                f"**ID:** {source['id']}  \n**Title:** {source['title']}  \n**Source:** {source['source']}  \n**Text Segment:** {source['segment']}  \n",
                 unsafe_allow_html=True,
             )

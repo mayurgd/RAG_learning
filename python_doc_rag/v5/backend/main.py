@@ -1,9 +1,9 @@
-from fastapi import FastAPI, HTTPException
+import uuid
 from pydantic import BaseModel
+from contextvars import ContextVar
+from fastapi import FastAPI, HTTPException
 from v5.backend.rag import generate_response
 from v5.logger import setup_logging, loggers_utils
-import uuid
-from contextvars import ContextVar
 
 # Create a context variable for correlation ID
 correlation_id_ctx_var = ContextVar("correlation_id", default=str(uuid.uuid4()))

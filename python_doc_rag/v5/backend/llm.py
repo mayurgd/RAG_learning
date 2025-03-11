@@ -1,8 +1,8 @@
 from dotenv import load_dotenv
+from v5.logger import loggers_utils
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 load_dotenv()
-from langchain_google_genai import ChatGoogleGenerativeAI
-from v5.logger import loggers_utils
 
 logger = loggers_utils(__name__)
 
