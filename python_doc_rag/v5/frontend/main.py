@@ -85,7 +85,7 @@ def delete_session(session_id):
         # create sync sql message history by connection_string
         message_history = SQLChatMessageHistory(
             session_id=session_id,
-            connection_string="sqlite:///v5/backend/chat_history/chats.db",
+            connection_string=f"sqlite:///{const.CHAT_DB_LOC}",
         )
         message_history.clear()
 

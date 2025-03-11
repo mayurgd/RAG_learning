@@ -1,4 +1,5 @@
 import uuid
+import v5.constants as const
 from pydantic import BaseModel
 from contextvars import ContextVar
 from fastapi import FastAPI, HTTPException
@@ -11,7 +12,7 @@ correlation_id_ctx_var = ContextVar("correlation_id", default=str(uuid.uuid4()))
 correlation_id_ctx_var.set(str(uuid.uuid4()))
 
 app = FastAPI()
-setup_logging(correlation_id_ctx_var)
+setup_logging(correlation_id_ctx_var, log_to_file=True, log_file=const.LOG_FILE_LOC)
 logger = loggers_utils(__name__)
 
 
@@ -31,7 +32,7 @@ async def query_docs(request: Query):
         logger.info("Generating Response")
         response = generate_response(query=query, session_id=session_id)
         logger.info(
-            f"Response generated successfully for session_id={session_id}, response={response['answer']}"
+            f"Response generated successfully for session_id={session_id}, response: {response['answer']}"
         )
         return {
             "query": request.query,

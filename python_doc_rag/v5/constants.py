@@ -65,4 +65,5 @@ lib_info_link = [
 
 FASTAPI_URL_QUERY = "http://127.0.0.1:8000/generate-response/"
 LOG_LEVEL = "DEBUG"
-CHAT_DB_LOC = "v5/backend/chat_history/chats.db"
+CHAT_DB_LOC = "v5/backend/history/chats.db"
+LOG_FILE_LOC = "v5/backend/history/app.log"
