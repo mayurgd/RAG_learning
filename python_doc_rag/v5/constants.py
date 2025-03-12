@@ -44,7 +44,6 @@ lib_info_link = [
     "https://pytorch-lightning.readthedocs.io/en/stable/getting_started/installation.html",
     "https://xgboost.readthedocs.io/en/stable/install.html",
     "https://lightgbm.readthedocs.io/en/latest/Installation-Guide.html",
-    "https://catboost.ai/en/docs/installation/python-installation-method",
     "https://pycaret.gitbook.io/docs/get-started/installation",
     "https://optuna.readthedocs.io/en/stable/installation.html",
     "https://shap.readthedocs.io/en/latest/#installation",
@@ -67,3 +66,5 @@ FASTAPI_URL_QUERY = "http://127.0.0.1:8000/generate-response/"
 LOG_LEVEL = "DEBUG"
 CHAT_DB_LOC = "v5/backend/history/chats.db"
 LOG_FILE_LOC = "v5/backend/history/app.log"
+VECTOR_INDEX_LOC = "v5/backend/faiss_index"
+BM25_INDEX_LOC = "v5/backend/bm25_index.pkl"

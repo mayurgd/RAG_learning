@@ -5,7 +5,7 @@ from v5.logger import loggers_utils
 from pydantic import BaseModel, Field
 from v5.backend.llm import get_chat_model
 from langchain_core.prompts import PromptTemplate
-from v5.backend.vector_store import process_vector_store
+from v5.backend.vector_store import process_vector_store, VectorDbBM25Retriever
 from langchain.output_parsers import PydanticOutputParser
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -28,7 +28,8 @@ def retrieval_chain_with_session_memory():
     llm = get_chat_model()
     logger.info("Loaded chat model.")
 
-    retriever = process_vector_store()
+    vector_store = process_vector_store()
+    retriever = VectorDbBM25Retriever(vector_store, k=5)
     logger.info("Initialized retriever from vector store.")
 
     # Contextualize question based on chat history
