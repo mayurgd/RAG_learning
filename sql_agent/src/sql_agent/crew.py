@@ -3,9 +3,9 @@ from crewai.project import CrewBase, agent, crew, task
 from dotenv import load_dotenv
 
 load_dotenv()
-from tools.nl2sql_tool import NL2SQLTool
+from src.sql_agent.tools.nl2sql_tool import NL2SQLTool
 
-nl2sql = NL2SQLTool(db_uri="sqlite:///sql_agent/src/sql_agent/company.db")
+nl2sql = NL2SQLTool(db_uri="sqlite:///src/sql_agent/company.db")
 
 
 @CrewBase

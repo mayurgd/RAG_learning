@@ -4,7 +4,7 @@ import warnings
 
 from datetime import datetime
 
-from crew import SqlAgent
+from src.sql_agent.crew import SqlAgent
 
 warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
 
